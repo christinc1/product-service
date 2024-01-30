@@ -4,6 +4,7 @@ import com.chris.learn.springcloud.productservice.dto.CouponDto;
 import com.chris.learn.springcloud.productservice.model.Product;
 import com.chris.learn.springcloud.productservice.repository.ProductRepository;
 import com.chris.learn.springcloud.productservice.restclients.CouponClient;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ public class ProductRestController {
     CouponClient couponClient;
 
     @PostMapping("/create")
+    @Retry(name = "product-api")
     public ResponseEntity<?> create(@RequestBody Product product) {
         CouponDto couponDto = couponClient.getCoupon(product.getCouponCode());
         product.setPrice(product.getPrice().subtract(couponDto.getDiscount()));
@@ -28,5 +30,10 @@ public class ProductRestController {
     @GetMapping("/{name}")
     public ResponseEntity<?> getProduct(@PathVariable("name") String name) {
         return ResponseEntity.ok(productRepository.findByName(name));
+    }
+
+    public ResponseEntity<?> handleError( Product product, Exception exception) {
+        System.out.println("Inside handle error");
+        return ResponseEntity.ok("Some Error Occurred" );
     }
 }
